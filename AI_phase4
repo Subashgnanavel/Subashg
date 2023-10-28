@@ -1,0 +1,63 @@
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load the dataset
+data = pd.read_csv("company_registration_data.csv")
+
+# Summary statistics
+summary = data.describe()
+
+# Data visualization
+sns.countplot(x="status", data=data)
+plt.title("Distribution of Company Status")
+plt.show()
+
+# Correlation matrix
+correlation_matrix = data.corr()
+sns.heatmap(correlation_matrix, annot=True)
+plt.title("Correlation Matrix")
+plt.show()
+
+# Convert date columns to datetime
+data['date_of_incorporation'] = pd.to_datetime(data['date_of_incorporation'], format='%Y-%m-%d')
+data['date_of_registration'] = pd.to_datetime(data['date_of_registration'], format='%Y-%m-%d')
+
+# Create a new feature: "registration_duration" in days
+data['registration_duration'] = (data['date_of_registration'] - data['date_of_incorporation']).dt.days
+
+# Encode categorical variables using one-hot encoding
+data = pd.get_dummies(data, columns=['company_type', 'state', 'status'], prefix=['company_type', 'state', 'status'])
+
+# Drop unnecessary columns
+data = data.drop(['date_of_incorporation', 'date_of_registration'], axis=1)
+
+# Handle missing values if any
+data.fillna(0, inplace=True)
+
+# Split the data into features (X) and target (y)
+X = data.drop('status_Active', axis=1)
+y = data['status_Active']
+
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, classification_report
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Create and train a logistic regression model
+model = LogisticRegression()
+model.fit(X_train, y_train)
+
+# Make predictions
+y_pred = model.predict(X_test)
+
+# Evaluate the model
+accuracy = accuracy_score(y_test, y_pred)
+print("Accuracy:", accuracy)
+
+# Print classification report for detailed metrics
+report = classification_report(y_test, y_pred)
+print(report)
